@@ -2,12 +2,21 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const distPath = path.join(__dirname, '../dist');
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+// Serve static assets from the Vite production build directory
+app.use(express.static(distPath));
 
 // Helper function to convert external image to base64 proxy
 app.get('/api/proxy-image', async (req, res) => {
@@ -183,6 +192,11 @@ app.post('/api/parse-text', (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+// SPA fallback: Return index.html for all non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
